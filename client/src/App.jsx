@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminPanel } from "./components/AdminPanel.jsx";
 import { CartDrawer } from "./components/CartDrawer.jsx";
 import { Header } from "./components/Header.jsx";
+import { LoadingScreen } from "./components/LoadingScreen.jsx";
 import { ProductCard } from "./components/ProductCard.jsx";
 import { ReviewsPage } from "./components/ReviewsPage.jsx";
 import { AdminLogin } from "./components/admin/AdminLogin.jsx";
@@ -456,6 +457,8 @@ export default function App() {
   const [cart, setCart] = useState(() => getStoredCart());
   const [cartOpen, setCartOpen] = useState(false);
   const [flyingItem, setFlyingItem] = useState(null);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState("Preparing fresh Gujarati snacks");
 
   useEffect(() => {
     function handlePopState() {
@@ -532,16 +535,40 @@ export default function App() {
   }
 
   useEffect(() => {
-    refreshProducts();
-    refreshCollections();
+    let isMounted = true;
+    const startedAt = Date.now();
+    const minimumLoaderTime = 950;
 
-    fetch(`${API_URL}/api/theme`)
-      .then((response) => response.json())
-      .then((config) => {
-        setThemeConfig(config);
-        applyThemeConfig(config);
-      })
-      .catch(() => applyThemeConfig(themeConfig));
+    async function loadInitialStoreData() {
+      setInitialLoading(true);
+      setLoadingMessage("Preparing fresh Gujarati snacks");
+
+      await Promise.allSettled([
+        refreshProducts(),
+        refreshCollections(),
+        fetch(`${API_URL}/api/theme`)
+          .then((response) => response.json())
+          .then((config) => {
+            setThemeConfig(config);
+            applyThemeConfig(config);
+          })
+          .catch(() => applyThemeConfig(themeConfig))
+      ]);
+
+      const remainingTime = Math.max(0, minimumLoaderTime - (Date.now() - startedAt));
+      window.setTimeout(() => {
+        if (isMounted) {
+          setLoadingMessage("Jalso is ready");
+          setInitialLoading(false);
+        }
+      }, remainingTime);
+    }
+
+    loadInitialStoreData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -735,8 +762,10 @@ export default function App() {
     );
   }
 
+  let page;
+
   if (route === "admin") {
-    return adminToken ? (
+    page = adminToken ? (
       <AdminPanel
         adminProfile={adminProfile}
         collections={collections}
@@ -759,10 +788,8 @@ export default function App() {
     ) : (
       <AdminLogin onLogin={loginAdmin} />
     );
-  }
-
-  if (route === "collection") {
-    return (
+  } else if (route === "collection") {
+    page = (
       <div className="min-h-screen overflow-hidden">
         <CollectionPage
           cart={cart}
@@ -782,10 +809,8 @@ export default function App() {
         />
       </div>
     );
-  }
-
-  if (route === "reviews") {
-    return (
+  } else if (route === "reviews") {
+    page = (
       <ReviewsPage
         cart={cart}
         cartCount={cartCount}
@@ -799,25 +824,34 @@ export default function App() {
         themeConfig={themeConfig}
       />
     );
+  } else {
+    page = (
+      <div className="min-h-screen overflow-hidden">
+        <Storefront
+          cart={cart}
+          cartCount={cartCount}
+          cartOpen={cartOpen}
+          cartTotal={cartTotal}
+          catalogError={catalogError}
+          categorySections={categorySections}
+          flyingItem={flyingItem}
+          themeConfig={themeConfig}
+          onAddToCart={addToCart}
+          onCartClose={() => setCartOpen(false)}
+          onCartOpen={() => setCartOpen(true)}
+          onNavigate={navigate}
+          onQuantityChange={changeQuantity}
+        />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen overflow-hidden">
-      <Storefront
-        cart={cart}
-        cartCount={cartCount}
-        cartOpen={cartOpen}
-        cartTotal={cartTotal}
-        catalogError={catalogError}
-        categorySections={categorySections}
-        flyingItem={flyingItem}
-        themeConfig={themeConfig}
-        onAddToCart={addToCart}
-        onCartClose={() => setCartOpen(false)}
-        onCartOpen={() => setCartOpen(true)}
-        onNavigate={navigate}
-        onQuantityChange={changeQuantity}
-      />
-    </div>
+    <>
+      {page}
+      <AnimatePresence>
+        {initialLoading && <LoadingScreen message={loadingMessage} />}
+      </AnimatePresence>
+    </>
   );
 }

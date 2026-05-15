@@ -125,7 +125,7 @@ function ForgotPasswordForm({ onBack }) {
       <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-[#1f1f1f] text-white">
         <LockKeyhole className="h-6 w-6" />
       </div>
-      <h1 className="text-3xl font-black">Reset Password</h1>
+      <h1 className="text-3xl font-black">Ressset Password</h1>
       <p className="mt-3 text-sm leading-6 text-black/55">Enter the admin email, verify OTP, then set a new password.</p>
 
       <label className="mt-6 block">
