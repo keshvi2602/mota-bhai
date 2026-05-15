@@ -16,10 +16,13 @@ import { Product } from "./models/Product.js";
 import { Theme } from "./models/Theme.js";
 import { User } from "./models/User.js";
 import reviewRoutes from "./routes/reviews.js";
+import { configureMongoDns, getMongoUri, getMongoUriError } from "./utils/mongoUri.js";
 import { ensureAdminUser, normalizeTags, slugify } from "./utils/seed.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, "../..");
+const clientDistPath = path.resolve(repoRoot, "client/dist");
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 dotenv.config({ path: path.resolve(__dirname, "../.env"), override: true });
 
@@ -35,10 +38,11 @@ const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://127.0.0.1:5173"
 ]);
+const localViteOriginPattern = /^http:\/\/(localhost|127\.0\.0\.1):51\d{2}$/;
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    if (!origin || allowedOrigins.has(origin) || localViteOriginPattern.test(origin)) return callback(null, true);
     return callback(new Error("Not allowed by CORS"));
   },
   credentials: true
@@ -736,15 +740,22 @@ async function getThemeConfig() {
 }
 
 async function start() {
-  if (process.env.MONGO_URI) {
+  const mongoUri = getMongoUri();
+  const mongoUriError = getMongoUriError(mongoUri);
+
+  if (mongoUri && !mongoUriError) {
     try {
-      await mongoose.connect(process.env.MONGO_URI, {
+      const dnsServers = configureMongoDns(mongoUri);
+      if (dnsServers.length) console.log(`MongoDB DNS servers: ${dnsServers.join(", ")}`);
+      await mongoose.connect(mongoUri, {
         serverSelectionTimeoutMS: 5000
       });
       mongoConnected = true;
     } catch (error) {
       console.warn(`MongoDB unavailable. CRUD disabled until DB connects: ${error.message}`);
     }
+  } else if (mongoUriError) {
+    console.warn(mongoUriError);
   }
 
   if (mongoConnected) {
@@ -758,7 +769,7 @@ async function start() {
     ? Boolean(await User.exists({ email: String(process.env.ADMIN_EMAIL).toLowerCase().trim() }))
     : false;
 
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     console.log(`Mota Bhai API running on http://localhost:${port}`);
     console.log(`MongoDB connected: ${mongoConnected ? "yes" : "no"}`);
     console.log(`Database name: ${mongoose.connection.name || "unavailable"}`);
@@ -769,6 +780,15 @@ async function start() {
     verifySmtpConfiguration().then((verified) => {
       console.log(`SMTP verified: ${verified ? "yes" : "no"}`);
     });
+  });
+
+  server.on("error", (error) => {
+    if (error.code === "EADDRINUSE") {
+      console.error(`Port ${port} is already in use. Stop the old API process or set PORT to another value in .env.`);
+    } else {
+      console.error(error);
+    }
+    process.exit(1);
   });
 }
 
@@ -1560,6 +1580,16 @@ app.patch("/api/admin/orders/:id/status", requireAdmin, async (request, response
   const order = await Order.findOneAndUpdate(orderQuery, { status }, { new: true, runValidators: true });
   if (!order) return response.status(404).json({ message: "Order not found." });
   return response.json(await toClientOrder(order));
+});
+
+app.use(express.static(clientDistPath));
+
+app.get("*", (request, response) => {
+  if (request.path.startsWith("/api")) {
+    return response.status(404).json({ message: "API route not found." });
+  }
+
+  return response.sendFile(path.join(clientDistPath, "index.html"));
 });
 
 start();

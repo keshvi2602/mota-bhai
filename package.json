@@ -8,7 +8,11 @@
     "client": "npm run dev --workspace client",
     "start": "npm run start --workspace server",
     "build": "npm run build --workspace client",
+    "deploy:check": "npm run build && node --check server/src/index.js",
     "install:all": "npm install --workspaces"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "workspaces": [
     "client",

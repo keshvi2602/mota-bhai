@@ -10,6 +10,7 @@ import { Product } from "../src/models/Product.js";
 import { Review } from "../src/models/Review.js";
 import { Theme } from "../src/models/Theme.js";
 import { User } from "../src/models/User.js";
+import { configureMongoDns, getMongoUri, getMongoUriError } from "../src/utils/mongoUri.js";
 import { normalizeTags, slugify } from "../src/utils/seed.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -333,14 +334,15 @@ async function backupDataDirectory() {
 }
 
 async function main() {
-  if (!process.env.MONGO_URI) {
-    throw new Error("MONGO_URI is required.");
-  }
+  const mongoUri = getMongoUri();
+  const mongoUriError = getMongoUriError(mongoUri);
+  if (mongoUriError) throw new Error(mongoUriError);
 
   const backupDir = await backupDataDirectory();
   console.log(`Backup created: ${backupDir}`);
 
-  await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 10000 });
+  configureMongoDns(mongoUri);
+  await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 10000 });
   console.log(`MongoDB connected: ${mongoose.connection.name}`);
 
   const legacyData = await loadLegacyData();
@@ -360,5 +362,5 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await mongoose.disconnect();
+    await mongoose.connection.close(true);
   });

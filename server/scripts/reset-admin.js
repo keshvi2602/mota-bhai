@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
 import { User } from "../src/models/User.js";
+import { configureMongoDns, getMongoUri, getMongoUriError } from "../src/utils/mongoUri.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,12 +14,13 @@ const repoDir = path.resolve(serverDir, "..");
 dotenv.config({ path: path.join(repoDir, ".env") });
 dotenv.config({ path: path.join(serverDir, ".env"), override: true });
 
-const mongoUri = process.env.MONGO_URI;
+const mongoUri = getMongoUri();
 const adminEmail = String(process.env.ADMIN_EMAIL || "").toLowerCase().trim();
 const adminPassword = String(process.env.ADMIN_PASSWORD || "");
+const mongoUriError = getMongoUriError(mongoUri);
 
-if (!mongoUri) {
-  console.error("MONGO_URI is missing in .env.");
+if (mongoUriError) {
+  console.error(mongoUriError);
   process.exit(1);
 }
 
@@ -28,6 +30,7 @@ if (!adminEmail || !adminPassword) {
 }
 
 try {
+  configureMongoDns(mongoUri);
   await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 10000 });
 
   const passwordHash = await bcrypt.hash(adminPassword, 12);
@@ -57,5 +60,5 @@ try {
   console.error(error.message);
   process.exitCode = 1;
 } finally {
-  await mongoose.disconnect();
+  await mongoose.connection.close(true);
 }
