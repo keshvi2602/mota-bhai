@@ -1,0 +1,14 @@
+{
+  "email": "info.kevallathiya@gmail.com",
+  "passwordHash": "$2a$12$2m1DPzsYkFxoWmA3On.rIOFDDP4ljpWMPF2pkLMQ14sUx8hOouGpi",
+  "role": "admin",
+  "name": "Mota Bhai Admin",
+  "profileImage": "",
+  "otpHash": "",
+  "otpPurpose": "",
+  "otpExpiresAt": null,
+  "otpAttempts": 0,
+  "otpLastSentAt": null,
+  "otpPendingEmail": "",
+  "otpPendingPasswordHash": ""
+}

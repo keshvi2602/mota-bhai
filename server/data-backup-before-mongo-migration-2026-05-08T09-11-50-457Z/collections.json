@@ -1,0 +1,34 @@
+[
+  {
+    "title": "dosa chips",
+    "matchTag": "dosa chips",
+    "productIds": [
+      "1778095831600",
+      "1778095801195",
+      "1778095772815",
+      "1778095740329",
+      "1778095707111",
+      "1778095577988"
+    ],
+    "description": "Recovered from browser backup.",
+    "id": "1778145441039",
+    "handle": "dosa-chips",
+    "image": ""
+  },
+  {
+    "title": "balaji wafers",
+    "matchTag": "balaji wafers",
+    "productIds": [
+      "1778094710836",
+      "1778094675440",
+      "1778091419976",
+      "1778094525279",
+      "1778094400892",
+      "1778094617742"
+    ],
+    "description": "Recovered from browser backup.",
+    "id": "1778145441040",
+    "handle": "balaji-wafers",
+    "image": ""
+  }
+]

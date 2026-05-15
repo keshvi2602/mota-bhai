@@ -1,0 +1,21 @@
+{
+  "name": "mota-bhai-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "migrate:json-to-mongo": "node scripts/migrate-json-to-mongo.js",
+    "start": "node src/index.js",
+    "reset:admin": "node scripts/reset-admin.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.3",
+    "nodemailer": "^8.0.7"
+  }
+}
