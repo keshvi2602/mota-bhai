@@ -1,7 +1,12 @@
 import { Home, Info, LayoutGrid, ShoppingBag, Star } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 export function Header({ cartCount, content, onCartOpen, onNavigate, themeConfig }) {
+  const logoUrl = String(themeConfig?.logoUrl || "").trim();
+  const [logoFailed, setLogoFailed] = useState(false);
+  const storeName = content?.headerCenterTitle || content?.storeName || "Mota Bhai";
+  const hasLogo = Boolean(logoUrl && !logoFailed);
   const links = [
     { href: "/#home", label: content?.homeNavLabel || "Home", Icon: Home },
     { href: "/#categories", label: content?.collectionsNavLabel || "Collections", Icon: LayoutGrid },
@@ -9,10 +14,14 @@ export function Header({ cartCount, content, onCartOpen, onNavigate, themeConfig
     { href: "/#about", label: content?.aboutNavLabel || "About Us", Icon: Info }
   ];
 
+  useEffect(() => {
+    setLogoFailed(false);
+  }, [logoUrl]);
+
   return (
     <header className="fixed left-0 right-0 top-0 z-50 px-4 pt-4 sm:px-8">
-      <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 shadow-premium backdrop-blur-2xl md:grid-cols-[1fr_auto_1fr] sm:px-6">
-        <div className="hidden text-xs uppercase tracking-[0.26em] text-champagne/70 lg:block">
+      <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-3 py-3 shadow-premium backdrop-blur-2xl sm:px-6">
+        <div className="hidden min-w-0 text-xs uppercase tracking-[0.26em] text-champagne/70 lg:block">
           {content?.headerLeftText || content?.topMiniTagline || "Fine Gujarati Snacks"}
         </div>
 
@@ -21,21 +30,26 @@ export function Header({ cartCount, content, onCartOpen, onNavigate, themeConfig
           onClick={() => {
             onNavigate?.("/#home");
           }}
-          className="justify-self-start text-left md:justify-self-center md:text-center"
+          className="col-start-2 flex min-w-0 justify-self-center text-center"
+          aria-label={`Go to ${storeName} home`}
         >
-          {themeConfig?.logoUrl ? (
-            <img src={themeConfig.logoUrl} alt="Mota Bhai" className="mx-auto max-h-10 max-w-40 object-contain" />
+          {hasLogo ? (
+            <span className="flex h-12 w-32 items-center justify-center py-1 sm:h-14 sm:w-40 md:w-48">
+              <img
+                src={logoUrl}
+                alt={storeName}
+                className="block max-h-full max-w-full object-contain"
+                onError={() => setLogoFailed(true)}
+              />
+            </span>
           ) : (
-            <span className="block text-xl font-black tracking-[0.16em] text-white sm:text-2xl">
-              {content?.headerCenterTitle || content?.storeName || "Mota Bhai"}
+            <span className="block max-w-44 truncate text-lg font-black tracking-[0.14em] text-white sm:max-w-56 sm:text-2xl">
+              {storeName}
             </span>
           )}
-          <span className="block text-[0.66rem] font-bold uppercase tracking-[0.35em] text-sovereign">
-            {content?.headerCenterSubtitle || content?.topMiniTagline || "Fine Gujarati Snacks"}
-          </span>
         </button>
 
-        <div className="flex justify-self-end gap-2">
+        <div className="col-start-3 flex justify-self-end gap-2">
           <motion.button
             whileTap={{ scale: 0.94 }}
             onClick={onCartOpen}

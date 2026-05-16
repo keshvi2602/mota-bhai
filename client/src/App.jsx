@@ -103,6 +103,30 @@ function createCategorySections(products, collections) {
   }));
 }
 
+function getBestSellingScore(product) {
+  const bestSellingFlags = ["bestSelling", "isBestSelling", "featured", "isFeatured"];
+  const salesFields = ["sales", "soldCount", "sold", "salesCount", "orderCount", "totalSold"];
+  const searchText = [product.tag, ...(product.tags || [])].map(normalizeValue).join(" ");
+  const hasBestSellingTag = ["best seller", "best-selling", "bestseller", "most selling", "popular", "featured", "customer favourite", "customer favorite"]
+    .some((term) => searchText.includes(term));
+
+  let score = hasBestSellingTag ? 100 : 0;
+  if (bestSellingFlags.some((field) => product[field] === true)) score += 200;
+  score += salesFields.reduce((total, field) => total + Math.max(Number(product[field] || 0), 0), 0);
+  return score;
+}
+
+function selectBestSellingProducts(products, limit = 4) {
+  const activeProducts = products.filter((product) => product.isActive !== false);
+  const rankedProducts = activeProducts
+    .map((product, index) => ({ index, product, score: getBestSellingScore(product) }))
+    .filter((item) => item.score > 0)
+    .sort((first, second) => second.score - first.score || first.index - second.index)
+    .map((item) => item.product);
+
+  return (rankedProducts.length ? rankedProducts : activeProducts).slice(0, limit);
+}
+
 function getCurrentRoute() {
   if (window.location.pathname.startsWith("/admin")) return "admin";
   if (window.location.pathname.startsWith("/collections/")) return "collection";
@@ -119,6 +143,7 @@ function Storefront({
   cartOpen,
   cartTotal,
   cart,
+  bestSellingProducts,
   catalogError,
   categorySections,
   flyingItem,
@@ -192,7 +217,39 @@ function Storefront({
           </div>
         </section>
 
-        <section id="categories" className="mx-auto max-w-7xl px-5 py-20 sm:px-10 lg:px-16">
+        {bestSellingProducts.length > 0 && (
+          <section className="mx-auto max-w-7xl px-5 pb-8 pt-20 sm:px-10 lg:px-16">
+            <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.28em] text-sovereign">Best Sellers</p>
+                <h2 className="mt-3 max-w-3xl text-4xl font-black text-white sm:text-5xl">
+                  Most Selling Products
+                </h2>
+              </div>
+              <p className="max-w-md text-sm leading-7 text-slate-400">
+                Customer favourites, picked for quality and value.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
+              {bestSellingProducts.map((product) => {
+                const cartItem = cart.find((item) => getProductId(item) === getProductId(product));
+                return (
+                  <ProductCard
+                    key={product.id || product._id}
+                    addToCartText={content.addToCartText}
+                    cartQuantity={cartItem?.quantity || 0}
+                    onAddToCart={onAddToCart}
+                    onQuantityChange={onQuantityChange}
+                    product={product}
+                  />
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        <section id="categories" className="mx-auto max-w-7xl px-5 pb-20 pt-12 sm:px-10 lg:px-16">
           <div className="mb-8 flex flex-col justify-between gap-6 md:flex-row md:items-end">
             <div>
               <p className="text-sm font-black uppercase tracking-[0.28em] text-emeraldTrust">{content.collectionLabel}</p>
@@ -206,7 +263,7 @@ function Storefront({
           </div>
 
           {categorySections.length ? (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-5">
             {categorySections.map((section) => {
               const slug = getCollectionSlug(section);
               const initials = String(section.title || "MB")
@@ -223,26 +280,26 @@ function Storefront({
                     event.preventDefault();
                     onNavigate(`/collections/${slug}`);
                   }}
-                  className="group relative min-h-[430px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.06] text-left shadow-premium transition duration-500 [transform-style:preserve-3d] hover:[transform:perspective(900px)_rotateX(2deg)_rotateY(-2deg)_translateY(-8px)] hover:border-sovereign/60 hover:shadow-gold"
+                  className="group relative flex h-full min-h-[360px] flex-col overflow-hidden rounded-[1.35rem] border border-white/10 bg-white/[0.06] text-left shadow-premium transition duration-500 [transform-style:preserve-3d] hover:[transform:perspective(900px)_rotateX(2deg)_rotateY(-2deg)_translateY(-8px)] hover:border-sovereign/60 hover:shadow-gold"
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/30 to-transparent opacity-95" />
-                  <div className="h-72 overflow-hidden bg-midnight">
+                  <div className="h-48 overflow-hidden bg-midnight sm:h-56 lg:h-48 xl:h-52">
                     {section.image ? (
                       <img loading="lazy" src={section.image} alt={section.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
                     ) : (
-                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#19110a] via-midnight to-[#0b241c] text-6xl font-black text-sovereign">
+                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#19110a] via-midnight to-[#0b241c] text-5xl font-black text-sovereign">
                         {initials}
                       </div>
                     )}
                   </div>
-                  <div className="relative -mt-14 p-5">
+                  <div className="relative -mt-10 flex flex-1 flex-col p-4">
                     <span className="inline-flex rounded-full border border-sovereign/35 bg-obsidian/80 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-champagne backdrop-blur">
                       {section.products.length} Products
                     </span>
-                    <div className="mt-4 rounded-2xl border border-white/10 bg-obsidian/78 p-5 backdrop-blur-xl">
-                      <h3 className="text-2xl font-black text-white">{section.title}</h3>
-                      <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-300">{section.description}</p>
-                      <span className="mt-5 inline-flex rounded-full bg-sovereign px-5 py-3 text-sm font-black text-obsidian transition group-hover:shadow-gold">
+                    <div className="mt-3 flex flex-1 flex-col rounded-2xl border border-white/10 bg-obsidian/78 p-4 backdrop-blur-xl">
+                      <h3 className="line-clamp-2 min-h-14 text-xl font-black leading-7 text-white">{section.title}</h3>
+                      <p className="mt-2 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-slate-300">{section.description}</p>
+                      <span className="mt-auto inline-flex w-fit rounded-full bg-sovereign px-4 py-2.5 text-sm font-black text-obsidian transition group-hover:shadow-gold">
                         Explore Collection
                       </span>
                     </div>
@@ -381,7 +438,7 @@ function CollectionPage({
 
               <div className="mt-10">
                 {collection.products.length ? (
-                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
                     {collection.products.map((product) => {
                       const cartItem = cart.find((item) => getProductId(item) === getProductId(product));
                       return (
@@ -596,6 +653,10 @@ export default function App() {
   const categorySections = useMemo(
     () => createCategorySections(products.filter((product) => product.isActive !== false), collections),
     [products, collections]
+  );
+  const bestSellingProducts = useMemo(
+    () => selectBestSellingProducts(products, 4),
+    [products]
   );
   const content = useMemo(() => getContent(themeConfig), [themeConfig]);
 
@@ -828,6 +889,7 @@ export default function App() {
     page = (
       <div className="min-h-screen overflow-hidden">
         <Storefront
+          bestSellingProducts={bestSellingProducts}
           cart={cart}
           cartCount={cartCount}
           cartOpen={cartOpen}
