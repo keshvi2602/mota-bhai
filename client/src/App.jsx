@@ -507,7 +507,8 @@ export default function App() {
     buttonColor: "#d4af37",
     backgroundColor: "#050914",
     surfaceColor: "#0b1224",
-    logoUrl: ""
+    logoUrl: "",
+    faviconUrl: ""
   });
   const [adminProfile, setAdminProfile] = useState(null);
   const [adminToken, setAdminTokenState] = useState(() => getAdminToken());

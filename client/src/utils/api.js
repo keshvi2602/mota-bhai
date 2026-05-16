@@ -43,4 +43,16 @@ export function applyThemeConfig(themeConfig) {
   root.style.setProperty("--background-color", themeConfig.backgroundColor || "#050914");
   root.style.setProperty("--surface-color", themeConfig.surfaceColor || "#0b1224");
   root.style.setProperty("--logo-url", `url("${themeConfig.logoUrl || ""}")`);
+
+  let favicon = document.querySelector('link[rel="icon"]');
+  if (!favicon) {
+    favicon = document.createElement("link");
+    favicon.rel = "icon";
+    document.head.appendChild(favicon);
+  }
+  const faviconUrl = themeConfig.faviconUrl || "/favicon.png";
+  favicon.type = faviconUrl.startsWith("data:image/x-icon") || faviconUrl.startsWith("data:image/vnd.microsoft.icon")
+    ? "image/x-icon"
+    : "image/png";
+  favicon.href = faviconUrl;
 }

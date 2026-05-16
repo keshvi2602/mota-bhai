@@ -110,6 +110,12 @@ export function ThemeEditor({ themeConfig, onSave }) {
     updateField("logoUrl", await readFileAsDataUrl(file));
   }
 
+  async function handleFaviconUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    updateField("faviconUrl", await readFileAsDataUrl(file));
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     await onSave(form);
@@ -168,6 +174,21 @@ export function ThemeEditor({ themeConfig, onSave }) {
               <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" onChange={handleLogoUpload} className="hidden" />
             </label>
           </div>
+        </div>
+        <div>
+          <span className="mb-2 block text-sm font-bold">Website Favicon</span>
+          <p className="mb-3 text-xs font-semibold text-black/50">Recommended size 512x512 PNG or ICO</p>
+          <div className="flex items-center gap-3">
+            <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-xl border border-black/10 bg-white">
+              {form.faviconUrl ? <img src={form.faviconUrl} alt="Favicon preview" className="h-8 w-8 object-contain" /> : <ImagePlus className="h-5 w-5 text-black/35" />}
+            </div>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#1f1f1f] px-4 py-3 text-sm font-black text-white">
+              <ImagePlus className="h-4 w-4" />
+              Upload / Change Favicon
+              <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/x-icon,image/vnd.microsoft.icon,.ico" onChange={handleFaviconUpload} className="hidden" />
+            </label>
+          </div>
+          <p className="mt-3 text-xs font-semibold text-black/50">Recommended: 512x512 PNG or ICO for best browser quality.</p>
         </div>
       </Section>
 

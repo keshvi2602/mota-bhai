@@ -56,6 +56,7 @@ const defaultTheme = {
   backgroundColor: "#050914",
   surfaceColor: "#0b1224",
   logoUrl: "",
+  faviconUrl: "",
   content: {
     headerLeftText: "Fine Gujarati Snacks",
     headerCenterTitle: "Mota Bhai",
@@ -732,7 +733,7 @@ async function getThemeConfig() {
     { new: true, upsert: true }
   );
   const normalizedTheme = normalizeThemeConfig(theme.themeConfig);
-  if (JSON.stringify(normalizedTheme.content) !== JSON.stringify(theme.themeConfig.content || {})) {
+  if (JSON.stringify(normalizedTheme) !== JSON.stringify(theme.themeConfig || {})) {
     theme.themeConfig = normalizedTheme;
     await theme.save();
   }

@@ -28,6 +28,10 @@ const themeSchema = new mongoose.Schema(
         type: String,
         default: ""
       },
+      faviconUrl: {
+        type: String,
+        default: ""
+      },
       content: {
         type: mongoose.Schema.Types.Mixed,
         default: {}
